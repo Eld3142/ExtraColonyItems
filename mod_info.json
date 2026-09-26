@@ -1,0 +1,25 @@
+{
+  "id": "eld_ci", #Mod ID, should be lowercase
+  "name": "Extra Colony Items", #Display Name
+  "author": "Eld", 
+  "utility": false,
+  "version": "1.0.0",
+  "description": "Add some colony items.",
+  "gameVersion": "0.98a-RC8",
+  "jars": [ "jars/Eld_CI.jar" ],
+  "modPlugin": "eld_ci.data.scripts.Eld_CI_ModPlugin",
+  "dependencies": [
+    {
+      "id": "lw_lazylib",
+      "name": "LazyLib"
+    },
+    {
+      "id": "MagicLib",
+      "name": "MagicLib"
+    },
+	{
+      "id": "lunalib",
+      "name": "LunaLib"
+    },
+  ],
+}
