@@ -3,6 +3,7 @@ package eld_ci.data.campaign;
 import com.fs.starfarer.api.campaign.SpecialItemData;
 import com.fs.starfarer.api.campaign.econ.Industry;
 import com.fs.starfarer.api.campaign.econ.InstallableIndustryItemPlugin;
+import com.fs.starfarer.api.campaign.econ.MutableCommodityQuantity;
 import com.fs.starfarer.api.impl.campaign.econ.impl.*;
 import com.fs.starfarer.api.impl.campaign.ids.Commodities;
 import com.fs.starfarer.api.impl.campaign.ids.Stats;
@@ -30,6 +31,10 @@ public class eld_ItemEffectsRepo {
     public static int MONITORING_BULB_STABILITY_BONUS = 5;
     public static int MONITORING_BULB_MARINES = 10;
     public static float MONITORING_BULB_ACCESS_LOSS = 0.5f;
+
+    public static float OMNI_CORE_MULTI = 2f;
+    public static float OMNI_CORE_AI_INDUSTRY_MULTI = 2f;
+    public static float OMNI_CORE_AI_MARKET_MULTI = 2f;
 
     protected static boolean hasShortage(Industry industry, String commodities) {
         int Demand = industry.getDemand(commodities).getQuantity().getModifiedInt();
@@ -175,6 +180,75 @@ public class eld_ItemEffectsRepo {
                             "" + (int) MONITORING_BULB_STABILITY_BONUS,
                             "" + (int) Math.round(MONITORING_BULB_ACCESS_LOSS * 100f) + "%",
                             "" + (int) MONITORING_BULB_MARINES);
+                }
+            });
+
+            ItemEffectsRepo.ITEM_EFFECTS.put("eld_omni_core", new BaseInstallableItemEffect(eld_CI_Items.OMNI_CORE) {
+                public void apply(Industry industry) {
+                    industry.getIncome().modifyMult(spec.getId(),
+                            OMNI_CORE_MULTI * industryHasAI(industry) * marketHasAI(industry),
+                            Misc.ucFirst(spec.getName().toLowerCase()));
+                    industry.getUpkeep().modifyMult(spec.getId(),
+                            OMNI_CORE_MULTI * industryHasAI(industry) * marketHasAI(industry),
+                            Misc.ucFirst(spec.getName().toLowerCase()));
+
+                    List<MutableCommodityQuantity> supplies = industry.getAllSupply();
+                    for (MutableCommodityQuantity supp : supplies) {
+                        supp.getQuantity().modifyMult(spec.getId(),
+                                OMNI_CORE_MULTI * industryHasAI(industry) * marketHasAI(industry),
+                                Misc.ucFirst(spec.getName().toLowerCase()));
+                    }
+                    List<MutableCommodityQuantity> demands = industry.getAllDemand();
+                    for (MutableCommodityQuantity demd : demands) {
+                        demd.getQuantity().modifyMult(spec.getId(),
+                                OMNI_CORE_MULTI * industryHasAI(industry) * marketHasAI(industry),
+                                Misc.ucFirst(spec.getName().toLowerCase()));
+                    }
+                }
+
+                public void unapply(Industry industry) {
+                    industry.getIncome().unmodifyMult(spec.getId());
+                    industry.getUpkeep().unmodifyMult(spec.getId());
+
+                    List<MutableCommodityQuantity> supplies = industry.getAllSupply();
+                    for (MutableCommodityQuantity supp : supplies) {
+                        supp.getQuantity().unmodifyMult(spec.getId());
+                    }
+                    List<MutableCommodityQuantity> demands = industry.getAllDemand();
+                    for (MutableCommodityQuantity demd : demands) {
+                        demd.getQuantity().unmodifyMult(spec.getId());
+                    }
+                }
+
+                protected static float industryHasAI(Industry industry) {
+                    if (industry.getAICoreId() != null) {
+                        return OMNI_CORE_AI_INDUSTRY_MULTI;
+                    } else {
+                        return 1f;
+                    }
+                }
+
+                protected static float marketHasAI(Industry industry) {
+                    if (industry.getMarket().getAdmin().getAICoreId() != null) {
+                        return OMNI_CORE_AI_MARKET_MULTI;
+                    } else {
+                        return 1f;
+                    }
+                }
+
+                protected void addItemDescriptionImpl(Industry industry,
+                                                      TooltipMakerAPI text,
+                                                      SpecialItemData data,
+                                                      InstallableIndustryItemPlugin.InstallableItemDescriptionMode mode,
+                                                      String pre, float pad) {
+
+                    text.addPara(pre + "Multiply industry income, upkeep, supplies, and demands by %s. " +
+                                    "If the industry has an AI core installed, multiply again by %s. " +
+                                    "If the market has an AI core admin, multiply again by %s.",
+                            pad, Misc.getHighlightColor(),
+                            "" + (int) Math.round(OMNI_CORE_MULTI * 100f) + "%",
+                            "" + (int) Math.round(OMNI_CORE_AI_INDUSTRY_MULTI * 100f) + "%",
+                            "" + (int) Math.round(OMNI_CORE_AI_MARKET_MULTI * 100f) + "%");
                 }
             });
 
