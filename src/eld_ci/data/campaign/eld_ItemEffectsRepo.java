@@ -1,17 +1,13 @@
 package eld_ci.data.campaign;
 
-import com.fs.starfarer.api.campaign.CargoAPI;
 import com.fs.starfarer.api.campaign.SpecialItemData;
 import com.fs.starfarer.api.campaign.econ.Industry;
 import com.fs.starfarer.api.campaign.econ.InstallableIndustryItemPlugin;
 import com.fs.starfarer.api.campaign.econ.MutableCommodityQuantity;
 import com.fs.starfarer.api.impl.campaign.econ.impl.*;
 import com.fs.starfarer.api.impl.campaign.ids.Commodities;
+import com.fs.starfarer.api.impl.campaign.ids.Items;
 import com.fs.starfarer.api.impl.campaign.ids.Stats;
-import com.fs.starfarer.api.impl.campaign.ids.Submarkets;
-import com.fs.starfarer.api.impl.campaign.intel.misc.ProductionReportIntel;
-import com.fs.starfarer.api.impl.campaign.procgen.SalvageEntityGenDataSpec;
-import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.SalvageEntity;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 import eld_ci.data.ids.eld_CI_Items;
@@ -36,6 +32,11 @@ public class eld_ItemEffectsRepo {
     public static int MONITORING_BULB_STABILITY_BONUS = 5;
     public static int MONITORING_BULB_MARINES = 10;
     public static float MONITORING_BULB_ACCESS_LOSS = 0.5f;
+
+    public static int SPECIMEN_TOOLBOX_BONUS = 1;
+    public static int SPECIMEN_TOOLBOX_POLLUTION = 3;
+    public static int SPECIMEN_TOOLBOX_MILD = 1;
+    public static int SPECIMEN_TOOLBOX_WATER = 2;
 
     public static float OMNI_CORE_MULTI = 2f;
     public static float OMNI_CORE_AI_INDUSTRY_MULTI = 2f;
@@ -188,6 +189,74 @@ public class eld_ItemEffectsRepo {
                 }
             });
 
+            ItemEffectsRepo.ITEM_EFFECTS.put("eld_specimen_toolbox", new BoostIndustryInstallableItemEffect(
+                    eld_CI_Items.SPECIMEN_TOOLBOX, SPECIMEN_TOOLBOX_BONUS, -SPECIMEN_TOOLBOX_BONUS) {
+                public void apply(Industry industry) {
+                    super.apply(industry);
+                    List<MutableCommodityQuantity> supplies = industry.getAllSupply();
+                    for (MutableCommodityQuantity supp : supplies) {
+                        supp.getQuantity().modifyFlat(spec.getId(),
+                                marketHasPollution(industry) + marketHasMildClimate(industry) + marketHasWaterSurface(industry),
+                                Misc.ucFirst(spec.getName().toLowerCase()));
+                    }
+                    List<MutableCommodityQuantity> demands = industry.getAllDemand();
+                    for (MutableCommodityQuantity demd : demands) {
+                        demd.getQuantity().modifyFlat(spec.getId(),
+                                -marketHasPollution(industry) - marketHasMildClimate(industry) - marketHasWaterSurface(industry),
+                                Misc.ucFirst(spec.getName().toLowerCase()));
+                    }
+                }
+
+                public void unapply(Industry industry) {
+                    super.unapply(industry);
+                    List<MutableCommodityQuantity> supplies = industry.getAllSupply();
+                    for (MutableCommodityQuantity supp : supplies) {
+                        supp.getQuantity().unmodifyFlat(spec.getId());
+                    }
+                    List<MutableCommodityQuantity> demands = industry.getAllDemand();
+                    for (MutableCommodityQuantity demd : demands) {
+                        demd.getQuantity().unmodifyFlat(spec.getId());
+                    }
+                }
+
+                private int marketHasPollution(Industry industry) {
+                    if (industry.getMarket().hasCondition("pollution")) {
+                        return -SPECIMEN_TOOLBOX_POLLUTION;
+                    } else {
+                        return 0;
+                    }
+                }
+
+                private int marketHasMildClimate(Industry industry) {
+                    if (industry.getMarket().hasCondition("mild_climate")) {
+                        return SPECIMEN_TOOLBOX_MILD;
+                    } else {
+                        return 0;
+                    }
+                }
+
+                private int marketHasWaterSurface(Industry industry) {
+                    if (industry.getMarket().hasCondition("water_surface")) {
+                        return SPECIMEN_TOOLBOX_WATER;
+                    } else {
+                        return 0;
+                    }
+                }
+
+                protected void addItemDescriptionImpl(Industry industry, TooltipMakerAPI text, SpecialItemData data,
+                                                      InstallableIndustryItemPlugin.InstallableItemDescriptionMode mode, String pre, float pad) {
+                    text.addPara(pre + "Increases farming production and decrease demand by %s unit. " +
+                            "If the planet has mild climate, boost effect by %s unit. " +
+                            "If the planet has water-covered surface, boost effect by %s unit. " +
+                            "But if the planet has pollution, reduce production and increase demand by %s unit",
+                            pad, Misc.getHighlightColor(),
+                            "" + (int) SPECIMEN_TOOLBOX_BONUS,
+                            "" + (int) SPECIMEN_TOOLBOX_MILD,
+                            "" + (int) SPECIMEN_TOOLBOX_WATER,
+                            "" + (int) SPECIMEN_TOOLBOX_POLLUTION);
+                }
+            });
+
             ItemEffectsRepo.ITEM_EFFECTS.put("eld_dimensional_mirror", new BaseInstallableItemEffect(
                     eld_CI_Items.DIMENSIONAL_MIRROR) {
                 public void apply(Industry industry) {
@@ -208,7 +277,7 @@ public class eld_ItemEffectsRepo {
                                                       InstallableIndustryItemPlugin.InstallableItemDescriptionMode mode,
                                                       String pre, float pad) {
 
-                    text.addPara(pre + "Prevent ruins decay and and allows trading with entities beyond the mirror.",
+                    text.addPara(pre + "Prevent ruins decay and allows trading with entities beyond the mirror.",
                             pad, Misc.getHighlightColor(),
                             "");
                 }
@@ -251,7 +320,7 @@ public class eld_ItemEffectsRepo {
                     }
                 }
 
-                protected static float industryHasAI(Industry industry) {
+                private static float industryHasAI(Industry industry) {
                     if (industry.getAICoreId() != null) {
                         return OMNI_CORE_AI_INDUSTRY_MULTI;
                     } else {
@@ -259,7 +328,7 @@ public class eld_ItemEffectsRepo {
                     }
                 }
 
-                protected static float marketHasAI(Industry industry) {
+                private static float marketHasAI(Industry industry) {
                     if (industry.getMarket().getAdmin().getAICoreId() != null) {
                         return OMNI_CORE_AI_MARKET_MULTI;
                     } else {
