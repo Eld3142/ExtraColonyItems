@@ -1,0 +1,3 @@
+id,name,faction,desc,script,icon,order
+eld_dimensional_market,Dimensional,omega,Buy items from entities beyond the mirror,eld_ci.data.campaign.eld_DimensionalMirrorMarketPlugin,graphics/factions/domain.png,800
+,,,,,,

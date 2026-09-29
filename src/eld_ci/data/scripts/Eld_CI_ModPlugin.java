@@ -19,6 +19,8 @@ public class Eld_CI_ModPlugin extends BaseModPlugin {
         addIndustryTagsToSpecialItem(eld_CI_Items.ORGANICAL_NANOFORGE, "heavyindustry");
         addIndustryTagsToSpecialItem(eld_CI_Items.OVERCLOCKED_SCANNER, "waystation");
         addIndustryTagsToSpecialItem(eld_CI_Items.MONITORING_BULB, "station");
+
+        addIndustryTagsToSpecialItem(eld_CI_Items.DIMENSIONAL_MIRROR, "techmining");
         addIndustryTagsToSpecialItem(eld_CI_Items.OMNI_CORE, "industry");
 
     }

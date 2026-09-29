@@ -1,5 +1,6 @@
 package eld_ci.data.campaign;
 
+import com.fs.starfarer.api.campaign.CargoAPI;
 import com.fs.starfarer.api.campaign.SpecialItemData;
 import com.fs.starfarer.api.campaign.econ.Industry;
 import com.fs.starfarer.api.campaign.econ.InstallableIndustryItemPlugin;
@@ -7,6 +8,10 @@ import com.fs.starfarer.api.campaign.econ.MutableCommodityQuantity;
 import com.fs.starfarer.api.impl.campaign.econ.impl.*;
 import com.fs.starfarer.api.impl.campaign.ids.Commodities;
 import com.fs.starfarer.api.impl.campaign.ids.Stats;
+import com.fs.starfarer.api.impl.campaign.ids.Submarkets;
+import com.fs.starfarer.api.impl.campaign.intel.misc.ProductionReportIntel;
+import com.fs.starfarer.api.impl.campaign.procgen.SalvageEntityGenDataSpec;
+import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.SalvageEntity;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.util.Misc;
 import eld_ci.data.ids.eld_CI_Items;
@@ -180,6 +185,32 @@ public class eld_ItemEffectsRepo {
                             "" + (int) MONITORING_BULB_STABILITY_BONUS,
                             "" + (int) Math.round(MONITORING_BULB_ACCESS_LOSS * 100f) + "%",
                             "" + (int) MONITORING_BULB_MARINES);
+                }
+            });
+
+            ItemEffectsRepo.ITEM_EFFECTS.put("eld_dimensional_mirror", new BaseInstallableItemEffect(
+                    eld_CI_Items.DIMENSIONAL_MIRROR) {
+                public void apply(Industry industry) {
+                    industry.getMarket().addSubmarket("eld_dimensional_market");
+                    if (industry instanceof BaseIndustry) {
+                        TechMining tech = (TechMining) industry;
+                        tech.setTechMiningMult(1f);
+                    }
+                }
+
+                public void unapply(Industry industry) {
+                    industry.getMarket().removeSubmarket("eld_dimensional_market");
+                }
+
+                protected void addItemDescriptionImpl(Industry industry,
+                                                      TooltipMakerAPI text,
+                                                      SpecialItemData data,
+                                                      InstallableIndustryItemPlugin.InstallableItemDescriptionMode mode,
+                                                      String pre, float pad) {
+
+                    text.addPara(pre + "Prevent ruins decay and and allows trading with entities beyond the mirror.",
+                            pad, Misc.getHighlightColor(),
+                            "");
                 }
             });
 
